@@ -70,22 +70,6 @@ router.route('/users')
             });
     });
 
-// this route is just returns an array of strings if the user is logged in
-// to demonstrate that we can ensure a user must be logged in to use a route
-
-// console.log()
-router.route('/stuff')
-    .get(mustBeLoggedIn(), (req, res) => {
-
-        console.log('this is test ')
-        // at this point we can assume the user is logged in. if not, the mustBeLoggedIn middleware would have caught it
-        res.json([
-            'Bears',
-            'Beets',
-            'Battlestar Galactica'
-        ]);
-    });
-
 
 module.exports = router;
 

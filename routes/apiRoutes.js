@@ -1,8 +1,7 @@
 const express = require('express');
-const passport = require('passport');
 const router = express.Router();
 const db = require('../models');
-const mustBeLoggedIn = require('../middleware/mustBeLoggedIn');
+const passport = require('../lib/passport/lib')
 
 function getCurrentUser(req, res) {
     // I'm picking only the specific fields its OK for the audience to see publicly
@@ -26,7 +25,7 @@ router.route('/auth')
         getCurrentUser(req, res);
     })
     // POST to /api/auth with username and password will authenticate the user
-    .post(passport.authenticate('local'), (req, res) => {
+    .post(passport(), (req, res) => {
         if (!req.user) {
             return res.status(401).json({
                 message: 'Invalid username or password.'
@@ -35,14 +34,6 @@ router.route('/auth')
 
         getCurrentUser(req, res);
     })
-    // DELETE to /api/auth will log the user out
-    .delete((req, res) => {
-        req.logout();
-        req.session.destroy();
-        res.json({
-            message: 'You have been logged out.'
-        });
-    });
 
 router.route('/users')
 // POST to /api/users will create a new user

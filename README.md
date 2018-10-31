@@ -1,13 +1,52 @@
- # rewrite-passport
 
-        1、注册 
-            curl -d '{"username":"222", "password":"222"}' -H "Content-Type: application/json" -X POST http://localhost:4000/users -v 
-        2、登录
-            curl -d '{"username":"222", "password":"222"}' -H "Content-Type: application/json" -X POST http://localhost:4000/api/auth -v 
-        3、是否登录成功
-            Cookie 值是通过上面的登录 api 返回的
-            curl  http://localhost:4000/api/auth -v -H 'Cookie: sid=s%3AvllJbxPx8dB6gi1h_3tliancboOKnyZc.j81o5D%2BFywpYpCDnEPbtwWc7Re%2F4MPiAlX7mx%2BSDot4;'
-            返回用户信息
-            {"id":"5bd6c853e109b21bd827742d","username":"222"}
+#### 第一阶段
+
+其实 认证 就是服务器通过用户名、密码判断用户是否合法，返回相应用户信息即可。
+
+1、具体实现逻辑是把上面逻辑抽象成一个中间件，在./lib/passport/index.js
+
+```
+
+const db = require('../../../models');
+
+module.exports = function () {
+    return (req, res, next) => {
+
+        const { username, password } = req.body
+
+        return db.User.findOne({ username })
+            .then(user => {
+                if (!user) {
+                    req.user = null
+                    
+                }
+                return user.validatePassword(password)
+                    .then(isMatch => {
+                        if (isMatch) {
+                            req.user = user
+                        } else {
+                            req.user = null
+                        }
+                        next()
+                    });
+            })
+    }
+}
+
+```
+2、然后在服务启动后调用中间件 middleware/passport.js 
+```
+app.use(passport())
+```
+
+执行以下登录 curl 语句。
+    
+    curl -d '{"username":"222", "password":"222"}' -H "Content-Type: application/json" -X POST http://localhost:4000/api/auth -v 
+
+发现返回的信息是正常的，但是没有 cookie 信息。
+
+在 ./lib/passport/lib/index.js 18行添加 req.session.user = user 即可，这里是 express-session 中间价的作用。
+
+再次调用上面 curl 语句是正常的。
 
 
